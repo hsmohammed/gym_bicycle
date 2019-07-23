@@ -15,61 +15,79 @@ from gym.utils import seeding
 
 class BicycleEnv(gym.Env):
     def __init__(self):
-        self.min_speed = 0.006018707
-        self.min_speedDiff = -4.944894
-        self.min_longDistance = 0.001033224
-        self.min_latDistance = -1.740935
-        self.min_pathDeviation = -1.249996
-        self.min_dirAngle = -49.47395
         
-        self.max_speed = 6.392389
-        self.max_speedDiff = 2.815963
-        self.max_longDistance = 23.57297
-        self.max_latDistance = 2.112076
-        self.max_pathDeviation = 1.128726
-        self.max_dirAngle = 53.47108
         
-        self.min_yawRate = -75.6378
-        self.min_Acc = -9.841724
         
-        self.max_yawRate = 72.07896
-        self.max_Acc = 10.50623
+        self.min_speed_follow = 0
+        self.min_speed_lead = 0
+
+        self.min_dirAngle_follow = -55
+        self.min_dirAngle_lead = -55
         
-        self.min_x = 6.5
-        self.max_x = 9
+        self.min_x_follow = 6.5
+        self.min_x_lead = 6.5
+
+        self.min_y_follow = 0
+        self.min_y_lead = 0
+
+        self.max_speed_follow = 6.5
+        self.max_speed_lead = 6.5
+
+        self.max_dirAngle_follow = 55
+        self.max_dirAngle_lead = 55
         
-        self.min_y = -25
-        self.max_y = -4
+        self.max_x_follow = 9
+        self.max_x_lead = 9
+
+        self.max_y_follow = 21
+        self.max_y_lead = 42
+
+        
+        self.min_yawRate_follow = -80
+        self.min_yawRate_lead = -80
+
+        self.min_Acc_follow = -11
+        self.min_Acc_lead = -11
+
+        
+        self.max_yawRate_follow = 80
+        self.max_yawRate_lead = 80
+
+        self.max_Acc_follow = 11
+        self.max_Acc_lead = 11
+
+
+        
+
+        
         self.viewer = None
         
         self.timeStep = 1/30
         
-        self.low_state = np.array([self.min_speed,
-                                   self.min_speedDiff,
-                                   self.min_longDistance,
-                                   self.min_latDistance,
-                                   self.min_pathDeviation,
-                                   self.min_dirAngle,
-                                   self.min_x,
-                                   self.min_y])
+        self.low_state = np.array([self.min_speed_follow, self.min_speed_lead,
+                                   self.min_dirAngle_follow, self.min_dirAngle_lead,
+                                   self.min_x_follow, self.min_x_lead,
+                                   self.min_y_follow, self.min_y_lead])
     
-        self.high_state = np.array([self.max_speed,
-                                   self.max_speedDiff,
-                                   self.max_longDistance,
-                                   self.max_latDistance,
-                                   self.max_pathDeviation,
-                                   self.max_dirAngle,
-                                   self.max_x,
-                                   self.max_y])
+        self.high_state = np.array([self.max_speed_follow, self.max_speed_lead,
+                                   self.max_dirAngle_follow, self.max_dirAngle_lead,
+                                   self.max_x_follow, self.max_x_lead,
+                                   self.max_y_follow, self.max_y_lead])
 
         
-        self.action_space = spaces.Box(np.array([self.min_yawRate,self.min_Acc]),
-                                       np.array([self.max_yawRate,self.max_Acc]))
+        self.action_space = spaces.Box(np.array([self.min_yawRate_follow, 
+                                                 self.min_Acc_follow]),
+                                       np.array([self.min_yawRate_follow, 
+                                                 self.min_Acc_follow]))
         
-        self.observation_space = spaces.Box(np.array([self.min_speed,self.min_speedDiff, self.min_longDistance,
-                                                      self.min_latDistance, self.min_pathDeviation, self.min_dirAngle, self.min_x, self.min_y]), 
-                                            np.array([self.max_speed,self.max_speedDiff, self.max_longDistance,
-                                                      self.max_latDistance, self.max_pathDeviation, self.max_dirAngle, self.min_x, self.min_y]))
+        self.observation_space = spaces.Box(np.array([self.min_speed_follow, self.min_speed_lead,
+                                   self.min_dirAngle_follow, self.min_dirAngle_lead,
+                                   self.min_x_follow, self.min_x_lead,
+                                   self.min_y_follow, self.min_y_lead]), 
+                                            np.array([self.max_speed_follow, self.max_speed_lead,
+                                   self.max_dirAngle_follow, self.max_dirAngle_lead,
+                                   self.max_x_follow, self.max_x_lead,
+                                   self.max_y_follow, self.max_y_lead]))
     
         self.seed()
         self.reset()
@@ -83,52 +101,66 @@ class BicycleEnv(gym.Env):
 
         t = self.timeStep
         
-        speed = self.state[0]
-        speedDiff = self.state[1]
-        longDistance = self.state[2]
-        latDistance = self.state[3]
-        pathDeviation = self.state[4]
-        dirAngle = self.state[5]
-        x = self.state[6]
-        y = self.state[7]
+        speed_follow = self.state[0]
+        speed_lead = self.state[1]
+        dirAngle_follow = self.state[2]
+        dirAngle_lead =  self.state[3]
+        x_follow = self.state[4]
+        x_lead = self.state[5]
+        y_follow = self.state[6]
+        y_lead = self.state[7]
         
-        yawRate = action[0]
-        acc = action[1]
+        pathDeviation_follow = x_follow - 7.75
         
-        speed_lead = speed - speedDiff
-        dirAngle_lead = 0
+        longDistance = y_lead - y_follow
+        latDistance = x_lead - x_follow
+        dirAngleDiff = dirAngle_lead - dirAngle_follow
+        speedDiff = speed_lead - speed_follow
+        
+
+        
+        yawRate_follow = action[0]
+        acc_follow = action[1]
+        
         acc_lead = 0
+        yawRate_lead = 0
+        
         distance_lead = speed_lead * t + 0.5 * acc_lead * ((t)**2)
+        dirAngle_lead += yawRate_lead * t
         dx_lead = distance_lead * np.sin(dirAngle_lead)
         dy_lead = distance_lead * np.cos(dirAngle_lead)
 
-        distance = speed * t + 0.5 * acc * ((t)**2)
+        distance_follow = speed_follow * t + 0.5 * acc_follow * ((t)**2)
+        dirAngle_follow += yawRate_follow * t
+        dx_follow = distance_follow * np.sin(dirAngle_follow)
+        dy_follow = distance_follow * np.cos(dirAngle_follow)
         
-        dirAngle += yawRate * t
-        
-        dx = distance * np.sin(dirAngle)
-        dy = distance * np.cos(dirAngle)
-        
-        if ((x + dx) > self.max_x):
-            dx = self.max_x - x
-        elif ((x + dx) < self.min_x):
-            dx = self.min_x - x
+        if ((x_follow + dx_follow) > self.max_x_follow):
+            dx_follow = self.max_x_follow - x_follow
+        elif ((x_follow + dx_follow) < self.min_x_follow):
+            dx_follow = self.min_x_follow - x_follow
             
-        speed += acc * t
-        pathDeviation += dx
+        speed_follow += acc_follow * t
+        speed_lead += acc_lead * t
+        pathDeviation_follow += dx_follow
         
-        longDistance += dy_lead - dy
-        latDistance += dx - dx_lead
-        speedDiff += acc * t
+        longDistance += dy_lead - dy_follow
+        latDistance += dx_lead - dx_follow
+        dirAngleDiff =  dirAngle_lead - dirAngle_follow
+        speedDiff = speed_lead - speed_follow
         
-        x += dx
-        y+= dy
+        x_follow += dx_follow
+        x_lead += dx_lead
+
+        y_follow += dy_follow
+        y_lead += dy_lead
+
         
-        reward = -10 * speed - 1 * speedDiff + 15 * longDistance + 0.5 * latDistance - 20 * pathDeviation - 1 * dirAngle
+        reward = -10 * speed_follow - 1 * speedDiff + 15 * longDistance + 0.5 * latDistance - 20 * pathDeviation_follow - 1 * dirAngle_follow - 1 * dirAngleDiff
         
-        self.state = np.array([speed, speedDiff, longDistance, latDistance, pathDeviation, dirAngle, x, y])
+        self.state = np.array([speed_follow, speed_lead, dirAngle_follow, dirAngle_lead, x_follow, x_lead, y_follow, y_lead])
         
-        done = bool(y > self.max_y)
+        done = bool(y_follow > self.max_y_follow)
         
         
         return self.state, reward, done, {}
@@ -216,7 +248,7 @@ class BicycleEnv(gym.Env):
                         
             
 if __name__ == '__main__':
-    env = BikePath()
+    env = BicycleEnv()
 #    env.render()
 
 
